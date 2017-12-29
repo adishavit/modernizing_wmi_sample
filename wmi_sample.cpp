@@ -8,6 +8,8 @@
 
 #include <vector>
 
+#include "gsl.hpp"
+
 #include "scoped_utils.h"
 
 #define TRY(exp)      do { auto hr__ = exp; if (hr__ < 0) throw hr__; } while(0)
@@ -15,7 +17,7 @@
 void Win32_PerfRawData_PerfProc_Process()
 {
    TRY(CoInitializeEx(nullptr, COINIT_MULTITHREADED));
-   auto uniniter = make_scoped_invoker(CoUninitialize);
+   auto uniniter = gsl::finally(&CoUninitialize);
 
    TRY(CoInitializeSecurity(nullptr, -1, nullptr, nullptr, RPC_C_AUTHN_LEVEL_NONE, RPC_C_IMP_LEVEL_IMPERSONATE, nullptr, EOAC_NONE, 0));
 

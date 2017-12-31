@@ -71,7 +71,7 @@ void Win32_PerfRawData_PerfProc_Process()
 
    // Refresh the object ten times and retrieve the value.
    std::vector<IWbemObjectAccess*> apEnumAccess;
-   auto enumReleaser = make_scoped_invoker([&]
+   auto enumReleaser = gsl::finally([&]
    {   
       for (auto enumAccess : apEnumAccess)
          if (enumAccess)
@@ -119,16 +119,13 @@ void Win32_PerfRawData_PerfProc_Process()
    }
 }
 
-int main()
+int main() try
 {
-   try
-   {
-      Win32_PerfRawData_PerfProc_Process();
-      return EXIT_SUCCESS;
-   }
-   catch (HRESULT hr)
-   {
-      wprintf(L"Error status=%08x\n", hr);
-      return EXIT_FAILURE;
-   }
+   Win32_PerfRawData_PerfProc_Process();
+   return EXIT_SUCCESS;
+}
+catch (HRESULT hr)
+{
+   wprintf(L"Error status=%08x\n", hr);
+   return EXIT_FAILURE;
 }

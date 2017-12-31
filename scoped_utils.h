@@ -3,49 +3,31 @@
 #include <functional>
 
 //////////////////////////////////////////////////////////////////////////
-// Simple, std::function (hence, inefficient) based scoped RAII classes.
+// Scoped RAII class.
 //////////////////////////////////////////////////////////////////////////
 
 
 // Call deleter on pointer on exit scope
-template<typename T, typename R = void>
+template<typename T, typename F>
 class scoped_ptr
 {
-   T* ptr_ = nullptr;
-   std::function<R(T*)> deleter_;
 public:
-   scoped_ptr() = default;
-   scoped_ptr(T* ptr, std::function<R(T*)>&& deleter) : ptr_(ptr), deleter_(deleter) {}
+   scoped_ptr(T* ptr, F action) : ptr_(ptr), action_(std::move(action)) {}
    ~scoped_ptr() { release(); }
    void release() 
    { 
-      if (ptr_ && deleter_)
-         deleter_(ptr_); 
-      deleter_ = {};
+      if (ptr_)
+         action_(ptr_); 
+      ptr_ = nullptr;
    }
+   // automatic conversion to underlying pointer
    operator T*() { return ptr_; }
    T* operator ->() { return ptr_; }
+
+private:
+   T * ptr_ = nullptr;
+   F action_;
 };
 
 template<typename T, typename Fun>
-auto make_scoped_ptr(T* ptr, Fun&& fun) { return scoped_ptr<T, decltype(fun(ptr))>(ptr, fun); }
-
-
-//////////////////////////////////////////////////////////////////////////
-
-// Invoke callable on exit scope
-template<typename R=void>
-class scoped_invoke
-{
-   std::function<R()> fun_;
-public:
-   scoped_invoke(std::function<R()>&& fun) : fun_(fun) {}
-   ~scoped_invoke() { fun_(); }
-};
-
-
-template<typename Fun>
-auto make_scoped_invoker(Fun&& fun) { return scoped_invoke<decltype(fun())>(fun); }
-
-
-//////////////////////////////////////////////////////////////////////////
+auto make_scoped_ptr(T* ptr, Fun&& fun) { return scoped_ptr<T, Fun>(ptr, std::forward<Fun>(fun)); }
